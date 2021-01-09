@@ -94,6 +94,7 @@ import {
   getCurrentUpdateLanePriority as getCurrentUpdateLanePriority_new,
 } from './ReactFiberReconciler.new';
 
+console.log(enableNewReconciler, 'enableNewReconciler');
 export const createContainer = enableNewReconciler
   ? createContainer_new
   : createContainer_old;

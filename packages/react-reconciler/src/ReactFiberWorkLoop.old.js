@@ -93,7 +93,7 @@ import {
   beforeActiveInstanceBlur,
   afterActiveInstanceBlur,
   clearContainer,
-} from './ReactFiberHostConfig';
+} from './forks/ReactFiberHostConfig.custom';
 
 import {
   createWorkInProgress,

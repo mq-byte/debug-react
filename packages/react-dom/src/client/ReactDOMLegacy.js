@@ -39,55 +39,7 @@ import {has as hasInstance} from 'shared/ReactInstanceMap';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
-let topLevelUpdateWarnings;
 let warnedAboutHydrateAPI = false;
-
-if (__DEV__) {
-  topLevelUpdateWarnings = (container: Container) => {
-    if (container._reactRootContainer && container.nodeType !== COMMENT_NODE) {
-      const hostInstance = findHostInstanceWithNoPortals(
-        container._reactRootContainer._internalRoot.current,
-      );
-      if (hostInstance) {
-        if (hostInstance.parentNode !== container) {
-          console.error(
-            'render(...): It looks like the React-rendered content of this ' +
-              'container was removed without using React. This is not ' +
-              'supported and will cause errors. Instead, call ' +
-              'ReactDOM.unmountComponentAtNode to empty a container.',
-          );
-        }
-      }
-    }
-
-    const isRootRenderedBySomeReact = !!container._reactRootContainer;
-    const rootEl = getReactRootElementInContainer(container);
-    const hasNonRootReactChild = !!(rootEl && getInstanceFromNode(rootEl));
-
-    if (hasNonRootReactChild && !isRootRenderedBySomeReact) {
-      console.error(
-        'render(...): Replacing React-rendered children with a new root ' +
-          'component. If you intended to update the children of this node, ' +
-          'you should instead have the existing children update their state ' +
-          'and render the new components instead of calling ReactDOM.render.',
-      );
-    }
-
-    if (
-      container.nodeType === ELEMENT_NODE &&
-      ((container: any): Element).tagName &&
-      ((container: any): Element).tagName.toUpperCase() === 'BODY'
-    ) {
-      console.error(
-        'render(): Rendering components directly into document.body is ' +
-          'discouraged, since its children are often manipulated by third-party ' +
-          'scripts and browser extensions. This may lead to subtle ' +
-          'reconciliation issues. Try rendering into a container element created ' +
-          'for your app.',
-      );
-    }
-  };
-}
 
 function getReactRootElementInContainer(container: any) {
   if (!container) {
@@ -118,34 +70,9 @@ function legacyCreateRootFromDOMContainer(
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
   // First clear any existing content.
   if (!shouldHydrate) {
-    let warned = false;
     let rootSibling;
     while ((rootSibling = container.lastChild)) {
-      if (__DEV__) {
-        if (
-          !warned &&
-          rootSibling.nodeType === ELEMENT_NODE &&
-          (rootSibling: any).hasAttribute(ROOT_ATTRIBUTE_NAME)
-        ) {
-          warned = true;
-          console.error(
-            'render(): Target node has markup rendered by React, but there ' +
-              'are unrelated nodes as well. This is most commonly caused by ' +
-              'white-space inserted around server-rendered markup.',
-          );
-        }
-      }
       container.removeChild(rootSibling);
-    }
-  }
-  if (__DEV__) {
-    if (shouldHydrate && !forceHydrate && !warnedAboutHydrateAPI) {
-      warnedAboutHydrateAPI = true;
-      console.warn(
-        'render(): Calling ReactDOM.render() to hydrate server-rendered markup ' +
-          'will stop working in React v18. Replace the ReactDOM.render() call ' +
-          'with ReactDOM.hydrate() if you want React to attach to the server HTML.',
-      );
     }
   }
 
@@ -159,19 +86,6 @@ function legacyCreateRootFromDOMContainer(
   );
 }
 
-function warnOnInvalidCallback(callback: mixed, callerName: string): void {
-  if (__DEV__) {
-    if (callback !== null && typeof callback !== 'function') {
-      console.error(
-        '%s(...): Expected the last optional `callback` argument to be a ' +
-          'function. Instead received: %s.',
-        callerName,
-        callback,
-      );
-    }
-  }
-}
-
 function legacyRenderSubtreeIntoContainer(
   parentComponent: ?React$Component<any, any>,
   children: ReactNodeList,
@@ -179,14 +93,10 @@ function legacyRenderSubtreeIntoContainer(
   forceHydrate: boolean,
   callback: ?Function,
 ) {
-  if (__DEV__) {
-    topLevelUpdateWarnings(container);
-    warnOnInvalidCallback(callback === undefined ? null : callback, 'render');
-  }
-
   // TODO: Without `any` type, Flow says "Property cannot be accessed on any
   // member of intersection type." Whyyyyyy.
-  let root: RootType = (container._reactRootContainer: any);
+  let root: RootType = (container._reactRootContainer: RootType);
+  debugger
   let fiberRoot;
   if (!root) {
     // Initial mount
@@ -283,28 +193,12 @@ export function hydrate(
     callback,
   );
 }
-
+//
 export function render(
   element: React$Element<any>,
   container: Container,
   callback: ?Function,
 ) {
-  invariant(
-    isValidContainer(container),
-    'Target container is not a DOM element.',
-  );
-  if (__DEV__) {
-    const isModernRoot =
-      isContainerMarkedAsRoot(container) &&
-      container._reactRootContainer === undefined;
-    if (isModernRoot) {
-      console.error(
-        'You are calling ReactDOM.render() on a container that was previously ' +
-          'passed to ReactDOM.createRoot(). This is not supported. ' +
-          'Did you mean to call root.render(element)?',
-      );
-    }
-  }
   return legacyRenderSubtreeIntoContainer(
     null,
     element,
