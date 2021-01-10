@@ -326,15 +326,6 @@ export function listenToNativeEvent(
   isCapturePhaseListener: boolean,
   target: EventTarget,
 ): void {
-  if (__DEV__) {
-    if (nonDelegatedEvents.has(domEventName) && !isCapturePhaseListener) {
-      console.error(
-        'Did not expect a listenToNativeEvent() call for "%s" in the bubble phase. ' +
-          'This is a bug in React. Please file an issue.',
-        domEventName,
-      );
-    }
-  }
 
   let eventSystemFlags = 0;
   if (isCapturePhaseListener) {
@@ -416,6 +407,7 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  // debugger
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,

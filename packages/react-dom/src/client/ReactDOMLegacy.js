@@ -12,8 +12,6 @@ import type {RootType} from './ReactDOMRoot';
 import type {ReactNodeList} from 'shared/ReactTypes';
 
 import {
-  getInstanceFromNode,
-  isContainerMarkedAsRoot,
   unmarkContainerAsRoot,
 } from './ReactDOMComponentTree';
 import {createLegacyRoot, isValidContainer} from './ReactDOMRoot';
@@ -21,25 +19,15 @@ import {ROOT_ATTRIBUTE_NAME} from '../shared/DOMProperty';
 import {
   DOCUMENT_NODE,
   ELEMENT_NODE,
-  COMMENT_NODE,
 } from '../shared/HTMLNodeType';
 
 import {
-  findHostInstanceWithNoPortals,
   updateContainer,
   unbatchedUpdates,
   getPublicRootInstance,
   findHostInstance,
-  findHostInstanceWithWarning,
 } from 'react-reconciler/src/ReactFiberReconciler';
-import getComponentName from 'shared/getComponentName';
 import invariant from 'shared/invariant';
-import ReactSharedInternals from 'shared/ReactSharedInternals';
-import {has as hasInstance} from 'shared/ReactInstanceMap';
-
-const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
-
-let warnedAboutHydrateAPI = false;
 
 function getReactRootElementInContainer(container: any) {
   if (!container) {
@@ -70,10 +58,11 @@ function legacyCreateRootFromDOMContainer(
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
   // First clear any existing content.
   if (!shouldHydrate) {
-    let rootSibling;
-    while ((rootSibling = container.lastChild)) {
-      container.removeChild(rootSibling);
-    }
+    container.innerHTML = '';
+    // let rootSibling;
+    // while ((rootSibling = container.lastChild)) {
+    //   container.removeChild(rootSibling);
+    // }
   }
 
   return createLegacyRoot(
@@ -93,12 +82,11 @@ function legacyRenderSubtreeIntoContainer(
   forceHydrate: boolean,
   callback: ?Function,
 ) {
-  // TODO: Without `any` type, Flow says "Property cannot be accessed on any
-  // member of intersection type." Whyyyyyy.
+  // TODO 取出节点标记
   let root: RootType = (container._reactRootContainer: RootType);
-  debugger
   let fiberRoot;
   if (!root) {
+    // TODO 第一次渲染
     // Initial mount
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
@@ -128,37 +116,18 @@ function legacyRenderSubtreeIntoContainer(
     // Update
     updateContainer(children, fiberRoot, parentComponent, callback);
   }
+  // TODO 从根目录渲染不用考虑
   return getPublicRootInstance(fiberRoot);
 }
 
 export function findDOMNode(
   componentOrElement: Element | ?React$Component<any, any>,
 ): null | Element | Text {
-  if (__DEV__) {
-    const owner = (ReactCurrentOwner.current: any);
-    if (owner !== null && owner.stateNode !== null) {
-      const warnedAboutRefsInRender = owner.stateNode._warnedAboutRefsInRender;
-      if (!warnedAboutRefsInRender) {
-        console.error(
-          '%s is accessing findDOMNode inside its render(). ' +
-            'render() should be a pure function of props and state. It should ' +
-            'never access something that requires stale data from the previous ' +
-            'render, such as refs. Move this logic to componentDidMount and ' +
-            'componentDidUpdate instead.',
-          getComponentName(owner.type) || 'A component',
-        );
-      }
-      owner.stateNode._warnedAboutRefsInRender = true;
-    }
-  }
   if (componentOrElement == null) {
     return null;
   }
   if ((componentOrElement: any).nodeType === ELEMENT_NODE) {
     return (componentOrElement: any);
-  }
-  if (__DEV__) {
-    return findHostInstanceWithWarning(componentOrElement, 'findDOMNode');
   }
   return findHostInstance(componentOrElement);
 }
@@ -172,18 +141,6 @@ export function hydrate(
     isValidContainer(container),
     'Target container is not a DOM element.',
   );
-  if (__DEV__) {
-    const isModernRoot =
-      isContainerMarkedAsRoot(container) &&
-      container._reactRootContainer === undefined;
-    if (isModernRoot) {
-      console.error(
-        'You are calling ReactDOM.hydrate() on a container that was previously ' +
-          'passed to ReactDOM.createRoot(). This is not supported. ' +
-          'Did you mean to call createRoot(container, {hydrate: true}).render(element)?',
-      );
-    }
-  }
   // TODO: throw or warn if we couldn't hydrate?
   return legacyRenderSubtreeIntoContainer(
     null,
@@ -208,60 +165,8 @@ export function render(
   );
 }
 
-export function unstable_renderSubtreeIntoContainer(
-  parentComponent: React$Component<any, any>,
-  element: React$Element<any>,
-  containerNode: Container,
-  callback: ?Function,
-) {
-  invariant(
-    isValidContainer(containerNode),
-    'Target container is not a DOM element.',
-  );
-  invariant(
-    parentComponent != null && hasInstance(parentComponent),
-    'parentComponent must be a valid React Component',
-  );
-  return legacyRenderSubtreeIntoContainer(
-    parentComponent,
-    element,
-    containerNode,
-    false,
-    callback,
-  );
-}
-
 export function unmountComponentAtNode(container: Container) {
-  invariant(
-    isValidContainer(container),
-    'unmountComponentAtNode(...): Target container is not a DOM element.',
-  );
-
-  if (__DEV__) {
-    const isModernRoot =
-      isContainerMarkedAsRoot(container) &&
-      container._reactRootContainer === undefined;
-    if (isModernRoot) {
-      console.error(
-        'You are calling ReactDOM.unmountComponentAtNode() on a container that was previously ' +
-          'passed to ReactDOM.createRoot(). This is not supported. Did you mean to call root.unmount()?',
-      );
-    }
-  }
-
   if (container._reactRootContainer) {
-    if (__DEV__) {
-      const rootEl = getReactRootElementInContainer(container);
-      const renderedByDifferentReact = rootEl && !getInstanceFromNode(rootEl);
-      if (renderedByDifferentReact) {
-        console.error(
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
-            'was rendered by another copy of React.',
-        );
-      }
-    }
-
-    // Unmount should not be batched.
     unbatchedUpdates(() => {
       legacyRenderSubtreeIntoContainer(null, null, container, false, () => {
         // $FlowFixMe This should probably use `delete container._reactRootContainer`
@@ -269,33 +174,6 @@ export function unmountComponentAtNode(container: Container) {
         unmarkContainerAsRoot(container);
       });
     });
-    // If you call unmountComponentAtNode twice in quick succession, you'll
-    // get `true` twice. That's probably fine?
-    return true;
-  } else {
-    if (__DEV__) {
-      const rootEl = getReactRootElementInContainer(container);
-      const hasNonRootReactChild = !!(rootEl && getInstanceFromNode(rootEl));
-
-      // Check if the container itself is a React root node.
-      const isContainerReactRoot =
-        container.nodeType === ELEMENT_NODE &&
-        isValidContainer(container.parentNode) &&
-        !!container.parentNode._reactRootContainer;
-
-      if (hasNonRootReactChild) {
-        console.error(
-          "unmountComponentAtNode(): The node you're attempting to unmount " +
-            'was rendered by React and is not a top-level container. %s',
-          isContainerReactRoot
-            ? 'You may have accidentally passed in a React root node instead ' +
-                'of its container.'
-            : 'Instead, have the parent component update its state and ' +
-                'rerender in order to remove this component.',
-        );
-      }
-    }
-
-    return false;
   }
+  return !!container._reactRootContainer;
 }

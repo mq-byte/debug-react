@@ -132,6 +132,7 @@ function createRootImpl(
   const root = createContainer(container, tag, hydrate, hydrationCallbacks);
   markContainerAsRoot(root.current, container);
 
+  console.log(container.nodeType, 'container.nodeType');
   const rootContainerElement =
     container.nodeType === COMMENT_NODE ? container.parentNode : container;
   listenToAllSupportedEvents(rootContainerElement);
@@ -150,11 +151,6 @@ export function createRoot(
   container: Container,
   options?: RootOptions,
 ): RootType {
-  invariant(
-    isValidContainer(container),
-    'createRoot(...): Target container is not a DOM element.',
-  );
-  warnIfReactDOMContainerInDEV(container);
   return new ReactDOMRoot(container, options);
 }
 
@@ -162,11 +158,6 @@ export function createBlockingRoot(
   container: Container,
   options?: RootOptions,
 ): RootType {
-  invariant(
-    isValidContainer(container),
-    'createRoot(...): Target container is not a DOM element.',
-  );
-  warnIfReactDOMContainerInDEV(container);
   return new ReactDOMBlockingRoot(container, BlockingRoot, options);
 }
 
@@ -186,36 +177,4 @@ export function isValidContainer(node: mixed): boolean {
       (node.nodeType === COMMENT_NODE &&
         (node: any).nodeValue === ' react-mount-point-unstable '))
   );
-}
-
-function warnIfReactDOMContainerInDEV(container) {
-  if (__DEV__) {
-    if (
-      container.nodeType === ELEMENT_NODE &&
-      ((container: any): Element).tagName &&
-      ((container: any): Element).tagName.toUpperCase() === 'BODY'
-    ) {
-      console.error(
-        'createRoot(): Creating roots directly with document.body is ' +
-          'discouraged, since its children are often manipulated by third-party ' +
-          'scripts and browser extensions. This may lead to subtle ' +
-          'reconciliation issues. Try using a container element created ' +
-          'for your app.',
-      );
-    }
-    if (isContainerMarkedAsRoot(container)) {
-      if (container._reactRootContainer) {
-        console.error(
-          'You are calling ReactDOM.createRoot() on a container that was previously ' +
-            'passed to ReactDOM.render(). This is not supported.',
-        );
-      } else {
-        console.error(
-          'You are calling ReactDOM.createRoot() on a container that ' +
-            'has already been passed to createRoot() before. Instead, call ' +
-            'root.render() on the existing root instead if you want to update it.',
-        );
-      }
-    }
-  }
 }

@@ -25,7 +25,6 @@ import {
 } from 'shared/ReactFeatureFlags';
 import {unstable_getThreadID} from 'scheduler/tracing';
 import {initializeUpdateQueue} from './ReactUpdateQueue.old';
-import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
@@ -71,52 +70,23 @@ function FiberRootNode(containerInfo, tag, hydrate) {
     this.hydrationCallbacks = null;
   }
 
-  if (__DEV__) {
-    switch (tag) {
-      case BlockingRoot:
-        this._debugRootType = 'createBlockingRoot()';
-        break;
-      case ConcurrentRoot:
-        this._debugRootType = 'createRoot()';
-        break;
-      case LegacyRoot:
-        this._debugRootType = 'createLegacyRoot()';
-        break;
-    }
-  }
 }
 
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
   hydrate: boolean,
-  hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): FiberRoot {
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
-  if (enableSuspenseCallback) {
-    root.hydrationCallbacks = hydrationCallbacks;
-  }
 
-  // Cyclic construction. This cheats the type system right now because
-  // stateNode is any.
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
-  if (enableCache) {
-    const initialCache = new Map();
-    root.pooledCache = initialCache;
-    const initialState = {
-      element: null,
-      cache: initialCache,
-    };
-    uninitializedFiber.memoizedState = initialState;
-  } else {
-    const initialState = {
-      element: null,
-    };
-    uninitializedFiber.memoizedState = initialState;
-  }
+  const initialState = {
+    element: null,
+  };
+  uninitializedFiber.memoizedState = initialState;
 
   initializeUpdateQueue(uninitializedFiber);
 
