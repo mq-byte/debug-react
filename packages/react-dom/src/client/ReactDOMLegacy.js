@@ -102,6 +102,7 @@ function legacyRenderSubtreeIntoContainer(
     }
     // Initial mount should not be batched.
     unbatchedUpdates(() => {
+      console.log('children, fiberRoot, parentComponent, callback',[children, fiberRoot, parentComponent, callback]);
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
   } else {

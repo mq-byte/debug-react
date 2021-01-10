@@ -532,12 +532,20 @@ export function scheduleUpdateOnFiber(
   lane: Lane,
   eventTime: number,
 ): FiberRoot | null {
-  checkForNestedUpdates();
-  warnAboutRenderPhaseUpdatesInDEV(fiber);
+  console.log('scheduleUpdateOnFiber: params', [fiber,lane,eventTime]);
 
+  // TODO important
+  // checkForNestedUpdates();
+  // checkForNestedUpdates ---> ...
+  if (nestedUpdateCount > NESTED_UPDATE_LIMIT) {
+    nestedUpdateCount = 0;
+    rootWithNestedUpdates = null;
+  }
+  // warnAboutRenderPhaseUpdatesInDEV(fiber);
+
+  // fiber.stateNode ---> FiberRootNode
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
-    warnAboutUpdateOnUnmountedFiberInDEV(fiber);
     return null;
   }
 
@@ -598,6 +606,7 @@ export function scheduleUpdateOnFiber(
   // priority as an argument to that function and this one.
   const priorityLevel = getCurrentPriorityLevel();
 
+  // TODO 首次是同步
   if (lane === SyncLane) {
     if (
       // Check if we're inside unbatchedUpdates
@@ -671,14 +680,6 @@ function markUpdateLaneFromFiberToRoot(
   if (alternate !== null) {
     alternate.lanes = mergeLanes(alternate.lanes, lane);
   }
-  if (__DEV__) {
-    if (
-      alternate === null &&
-      (sourceFiber.flags & (Placement | Hydrating)) !== NoFlags
-    ) {
-      warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
-    }
-  }
   // Walk the parent path to the root and update the child expiration time.
   let node = sourceFiber;
   let parent = sourceFiber.return;
@@ -687,12 +688,6 @@ function markUpdateLaneFromFiberToRoot(
     alternate = parent.alternate;
     if (alternate !== null) {
       alternate.childLanes = mergeLanes(alternate.childLanes, lane);
-    } else {
-      if (__DEV__) {
-        if ((parent.flags & (Placement | Hydrating)) !== NoFlags) {
-          warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
-        }
-      }
     }
     node = parent;
     parent = parent.return;
@@ -1018,15 +1013,7 @@ function markRootSuspended(root, suspendedLanes) {
 // This is the entry point for synchronous tasks that don't go
 // through Scheduler
 function performSyncWorkOnRoot(root) {
-  if (enableProfilerTimer && enableProfilerNestedUpdatePhase) {
-    syncNestedUpdateFlag();
-  }
-
-  invariant(
-    (executionContext & (RenderContext | CommitContext)) === NoContext,
-    'Should not already be working.',
-  );
-
+  // TODO performSyncWorkOnRoot flushPassiveEffects
   flushPassiveEffects();
 
   let lanes;
@@ -1879,33 +1866,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // flush synchronous work at the end, to avoid factoring hazards like this.
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
-  flushRenderPhaseStrictModeWarningsInDEV();
-
-  invariant(
-    (executionContext & (RenderContext | CommitContext)) === NoContext,
-    'Should not already be working.',
-  );
+  // flushRenderPhaseStrictModeWarningsInDEV();
 
   const finishedWork = root.finishedWork;
   const lanes = root.finishedLanes;
 
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logCommitStarted(lanes);
-    }
-  }
-
-  if (enableSchedulingProfiler) {
-    markCommitStarted(lanes);
-  }
-
   if (finishedWork === null) {
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logCommitStopped();
-      }
-    }
-
     if (enableSchedulingProfiler) {
       markCommitStopped();
     }
@@ -1914,12 +1880,6 @@ function commitRootImpl(root, renderPriorityLevel) {
   }
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
-
-  invariant(
-    finishedWork !== root.current,
-    'Cannot commit the same tree as before. This error is likely caused by ' +
-      'a bug in React. Please file an issue.',
-  );
 
   // commitRoot never returns a continuation; it always finishes synchronously.
   // So we can clear these now to allow a new callback to be scheduled.
@@ -1997,22 +1957,12 @@ function commitRootImpl(root, renderPriorityLevel) {
 
     nextEffect = firstEffect;
     do {
-      if (__DEV__) {
-        invokeGuardedCallback(null, commitBeforeMutationEffects, null);
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
-      } else {
-        try {
-          commitBeforeMutationEffects();
-        } catch (error) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
+      try {
+        commitBeforeMutationEffects();
+      } catch (error) {
+        invariant(nextEffect !== null, 'Should be working on an effect.');
+        captureCommitPhaseError(nextEffect, error);
+        nextEffect = nextEffect.nextEffect;
       }
     } while (nextEffect !== null);
 
@@ -2034,28 +1984,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // The next phase is the mutation phase, where we mutate the host tree.
     nextEffect = firstEffect;
     do {
-      if (__DEV__) {
-        invokeGuardedCallback(
-          null,
-          commitMutationEffects,
-          null,
-          root,
-          renderPriorityLevel,
-        );
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
-      } else {
-        try {
-          commitMutationEffects(root, renderPriorityLevel);
-        } catch (error) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
+      try {
+        commitMutationEffects(root, renderPriorityLevel);
+      } catch (error) {
+        invariant(nextEffect !== null, 'Should be working on an effect.');
+        captureCommitPhaseError(nextEffect, error);
+        nextEffect = nextEffect.nextEffect;
       }
     } while (nextEffect !== null);
 
@@ -2075,22 +2009,12 @@ function commitRootImpl(root, renderPriorityLevel) {
     // layout, but class component lifecycles also fire here for legacy reasons.
     nextEffect = firstEffect;
     do {
-      if (__DEV__) {
-        invokeGuardedCallback(null, commitLayoutEffects, null, root, lanes);
-        if (hasCaughtError()) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          const error = clearCaughtError();
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
-      } else {
-        try {
-          commitLayoutEffects(root, lanes);
-        } catch (error) {
-          invariant(nextEffect !== null, 'Should be working on an effect.');
-          captureCommitPhaseError(nextEffect, error);
-          nextEffect = nextEffect.nextEffect;
-        }
+      try {
+        commitLayoutEffects(root, lanes);
+      } catch (error) {
+        invariant(nextEffect !== null, 'Should be working on an effect.');
+        captureCommitPhaseError(nextEffect, error);
+        nextEffect = nextEffect.nextEffect;
       }
     } while (nextEffect !== null);
 
@@ -2210,10 +2134,6 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   onCommitRootDevTools(finishedWork.stateNode, renderPriorityLevel);
 
-  if (__DEV__) {
-    onCommitRootTestSelector();
-  }
-
   // Always call this before exiting `commitRoot`, to ensure that any
   // additional work on this root is scheduled.
   ensureRootIsScheduled(root, now());
@@ -2226,11 +2146,6 @@ function commitRootImpl(root, renderPriorityLevel) {
   }
 
   if ((executionContext & LegacyUnbatchedContext) !== NoContext) {
-    if (__DEV__) {
-      if (enableDebugTracing) {
-        logCommitStopped();
-      }
-    }
 
     if (enableSchedulingProfiler) {
       markCommitStopped();
@@ -2245,12 +2160,6 @@ function commitRootImpl(root, renderPriorityLevel) {
 
   // If layout work was scheduled, flush it now.
   flushSyncCallbackQueue();
-
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logCommitStopped();
-    }
-  }
 
   if (enableSchedulingProfiler) {
     markCommitStopped();
@@ -2417,11 +2326,6 @@ function commitMutationEffects(
 }
 
 function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logLayoutEffectsStarted(committedLanes);
-    }
-  }
 
   if (enableSchedulingProfiler) {
     markLayoutEffectsStarted(committedLanes);
@@ -2452,12 +2356,6 @@ function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
 
     resetCurrentDebugFiberInDEV();
     nextEffect = nextEffect.nextEffect;
-  }
-
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      logLayoutEffectsStopped();
-    }
   }
 
   if (enableSchedulingProfiler) {
@@ -2845,25 +2743,6 @@ function checkForNestedUpdates() {
   if (nestedUpdateCount > NESTED_UPDATE_LIMIT) {
     nestedUpdateCount = 0;
     rootWithNestedUpdates = null;
-    invariant(
-      false,
-      'Maximum update depth exceeded. This can happen when a component ' +
-        'repeatedly calls setState inside componentWillUpdate or ' +
-        'componentDidUpdate. React limits the number of nested updates to ' +
-        'prevent infinite loops.',
-    );
-  }
-
-  if (__DEV__) {
-    if (nestedPassiveUpdateCount > NESTED_PASSIVE_UPDATE_LIMIT) {
-      nestedPassiveUpdateCount = 0;
-      console.error(
-        'Maximum update depth exceeded. This can happen when a component ' +
-          "calls setState inside useEffect, but useEffect either doesn't " +
-          'have a dependency array, or one of the dependencies changes on ' +
-          'every render.',
-      );
-    }
   }
 }
 
