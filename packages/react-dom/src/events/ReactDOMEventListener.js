@@ -134,13 +134,16 @@ export function createEventListenerWrapperWithPriority(
     targetContainer,
   );
 }
-
+// TODO 事件调用入口
 function dispatchDiscreteEvent(
   domEventName,
   eventSystemFlags,
   container,
   nativeEvent,
 ) {
+  if( domEventName === 'click' ){
+    debugger
+  }
   if (
     !enableLegacyFBSupport ||
     // If we are in Legacy FB support mode, it means we've already

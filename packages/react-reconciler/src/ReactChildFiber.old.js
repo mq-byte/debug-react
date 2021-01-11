@@ -1331,11 +1331,6 @@ function ChildReconciler(shouldTrackSideEffects) {
       throwOnInvalidObjectType(returnFiber, newChild);
     }
 
-    if (__DEV__) {
-      if (typeof newChild === 'function') {
-        warnOnFunctionType(returnFiber);
-      }
-    }
     if (typeof newChild === 'undefined' && !isUnkeyedTopLevelFragment) {
       // If the new child is undefined, and the return fiber is a composite
       // component, throw an error. If Fiber return types are disabled,

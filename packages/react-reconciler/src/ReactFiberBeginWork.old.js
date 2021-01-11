@@ -255,6 +255,7 @@ export function reconcileChildren(
   nextChildren: any,
   renderLanes: Lanes,
 ) {
+  debugger;
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
@@ -1132,13 +1133,6 @@ function pushHostRootContext(workInProgress) {
 
 function updateHostRoot(current, workInProgress, renderLanes) {
   pushHostRootContext(workInProgress);
-  const updateQueue = workInProgress.updateQueue;
-  invariant(
-    current !== null && updateQueue !== null,
-    'If the root does not have an updateQueue, we should have already ' +
-      'bailed out. This error is likely caused by a bug in React. Please ' +
-      'file an issue.',
-  );
   const nextProps = workInProgress.pendingProps;
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState.element;
@@ -3222,24 +3216,6 @@ function beginWork(
 ): Fiber | null {
   const updateLanes = workInProgress.lanes;
 
-  if (__DEV__) {
-    if (workInProgress._debugNeedsRemount && current !== null) {
-      // This will restart the begin phase with a new fiber.
-      return remountFiber(
-        current,
-        workInProgress,
-        createFiberFromTypeAndProps(
-          workInProgress.type,
-          workInProgress.key,
-          workInProgress.pendingProps,
-          workInProgress._debugOwner || null,
-          workInProgress.mode,
-          workInProgress.lanes,
-        ),
-      );
-    }
-  }
-
   if (current !== null) {
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
@@ -3637,12 +3613,6 @@ function beginWork(
       break;
     }
   }
-  invariant(
-    false,
-    'Unknown unit of work tag (%s). This error is likely caused by a bug in ' +
-      'React. Please file an issue.',
-    workInProgress.tag,
-  );
 }
 
 export {beginWork};

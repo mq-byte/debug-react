@@ -83,7 +83,7 @@ type DispatchEntry = {|
 |};
 
 export type DispatchQueue = Array<DispatchEntry>;
-
+debugger
 // TODO: remove top-level side effect.
 SimpleEventPlugin.registerEvents();
 EnterLeaveEventPlugin.registerEvents();
@@ -407,7 +407,6 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
-  // debugger
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,
@@ -691,6 +690,9 @@ export function accumulateSinglePhaseListeners(
       }
 
       // Standard React on* listeners, i.e. onClick or onClickCapture
+      if (reactEventName === 'onClick'){
+        debugger;
+      }
       if (reactEventName !== null) {
         const listener = getListener(instance, reactEventName);
         if (listener != null) {

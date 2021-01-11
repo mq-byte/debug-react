@@ -274,19 +274,14 @@ function setInitialDOMProperties(
   nextProps: Object,
   isCustomComponentTag: boolean,
 ): void {
+  console.log(registrationNameDependencies, 'registrationNameDependencies------------');
   for (const propKey in nextProps) {
+    debugger;
     if (!nextProps.hasOwnProperty(propKey)) {
       continue;
     }
     const nextProp = nextProps[propKey];
     if (propKey === STYLE) {
-      if (__DEV__) {
-        if (nextProp) {
-          // Freeze the next style object so that we can assume it won't be
-          // mutated. We have already warned for this in the past.
-          Object.freeze(nextProp);
-        }
-      }
       // Relies on `updateStylesByID` not mutating `styleUpdates`.
       setValueForStyles(domElement, nextProp);
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
@@ -319,9 +314,6 @@ function setInitialDOMProperties(
       // on server rendering (but we *do* want to emit it in SSR).
     } else if (registrationNameDependencies.hasOwnProperty(propKey)) {
       if (nextProp != null) {
-        if (__DEV__ && typeof nextProp !== 'function') {
-          warnForInvalidEventListener(propKey, nextProp);
-        }
         if (propKey === 'onScroll') {
           listenToNonDelegatedEvent('scroll', domElement);
         }
@@ -477,9 +469,6 @@ export function setInitialProperties(
   rootContainerElement: Element | Document,
 ): void {
   const isCustomComponentTag = isCustomComponent(tag, rawProps);
-  if (__DEV__) {
-    validatePropertiesInDevelopment(tag, rawProps);
-  }
 
   // TODO: Make sure that we check isMounted before firing any of these events.
   let props: Object;

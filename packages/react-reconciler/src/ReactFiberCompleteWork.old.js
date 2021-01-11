@@ -96,7 +96,7 @@ import {
   shouldUpdateFundamentalComponent,
   preparePortalMount,
   prepareScopeUpdate,
-} from './ReactFiberHostConfig';
+} from './forks/ReactFiberHostConfig.dom';
 import {
   getRootHostContainer,
   popHostContext,
@@ -794,7 +794,7 @@ function completeWork(
   renderLanes: Lanes,
 ): Fiber | null {
   const newProps = workInProgress.pendingProps;
-
+debugger;
   switch (workInProgress.tag) {
     case IndeterminateComponent:
     case LazyComponent:

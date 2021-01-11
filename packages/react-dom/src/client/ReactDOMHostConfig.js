@@ -266,25 +266,7 @@ export function createInstance(
   internalInstanceHandle: Object,
 ): Instance {
   let parentNamespace: string;
-  if (__DEV__) {
-    // TODO: take namespace into account when validating.
-    const hostContextDev = ((hostContext: any): HostContextDev);
-    validateDOMNesting(type, null, hostContextDev.ancestorInfo);
-    if (
-      typeof props.children === 'string' ||
-      typeof props.children === 'number'
-    ) {
-      const string = '' + props.children;
-      const ownAncestorInfo = updatedAncestorInfo(
-        hostContextDev.ancestorInfo,
-        type,
-      );
-      validateDOMNesting(null, string, ownAncestorInfo);
-    }
-    parentNamespace = hostContextDev.namespace;
-  } else {
-    parentNamespace = ((hostContext: any): HostContextProd);
-  }
+  debugger;
   const domElement: Instance = createElement(
     type,
     props,

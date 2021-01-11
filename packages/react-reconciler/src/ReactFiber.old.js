@@ -209,15 +209,6 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
     workInProgress.elementType = current.elementType;
     workInProgress.type = current.type;
     workInProgress.stateNode = current.stateNode;
-
-    if (__DEV__) {
-      // DEV-only fields
-      workInProgress._debugID = current._debugID;
-      workInProgress._debugSource = current._debugSource;
-      workInProgress._debugOwner = current._debugOwner;
-      workInProgress._debugHookTypes = current._debugHookTypes;
-    }
-
     workInProgress.alternate = current;
     current.alternate = workInProgress;
   } else {
@@ -276,25 +267,6 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
   if (enableProfilerTimer) {
     workInProgress.selfBaseDuration = current.selfBaseDuration;
     workInProgress.treeBaseDuration = current.treeBaseDuration;
-  }
-
-  if (__DEV__) {
-    workInProgress._debugNeedsRemount = current._debugNeedsRemount;
-    switch (workInProgress.tag) {
-      case IndeterminateComponent:
-      case FunctionComponent:
-      case SimpleMemoComponent:
-        workInProgress.type = resolveFunctionForHotReloading(current.type);
-        break;
-      case ClassComponent:
-        workInProgress.type = resolveClassForHotReloading(current.type);
-        break;
-      case ForwardRef:
-        workInProgress.type = resolveForwardRefForHotReloading(current.type);
-        break;
-      default:
-        break;
-    }
   }
 
   return workInProgress;
