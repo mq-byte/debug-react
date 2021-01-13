@@ -4,10 +4,15 @@ import './App.css';
 function App() {
   return (
     <div onClick={()=>{
-      debugger;
-      console.log('999');
-    }} className="App">
-      onclick
+      console.log('444');
+    }}>
+      <div onClick={(e)=>{
+        console.log(e.persist);
+        debugger;
+        console.log('999');
+      }} className="App">
+        onclick
+      </div>
     </div>
   );
 }
