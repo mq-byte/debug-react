@@ -202,7 +202,6 @@ function extractEvents(
       accumulateTargetOnly,
       nativeEvent,
     );
-    debugger;
     if (listeners.length > 0) {
       // Intentionally create event lazily.
       const event = new SyntheticEventCtor(

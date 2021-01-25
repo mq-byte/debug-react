@@ -1765,16 +1765,6 @@ function dispatchAction<S, A>(
   queue: UpdateQueue<S, A>,
   action: A,
 ) {
-  if (__DEV__) {
-    if (typeof arguments[3] === 'function') {
-      console.error(
-        "State updates from the useState() and useReducer() Hooks don't support the " +
-          'second callback argument. To execute a side effect after ' +
-          'rendering, declare it in the component body with useEffect().',
-      );
-    }
-  }
-
   const eventTime = requestEventTime();
   const lane = requestUpdateLane(fiber);
 
@@ -1816,11 +1806,6 @@ function dispatchAction<S, A>(
       // same as the current state, we may be able to bail out entirely.
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
-        let prevDispatcher;
-        if (__DEV__) {
-          prevDispatcher = ReactCurrentDispatcher.current;
-          ReactCurrentDispatcher.current = InvalidNestedHooksDispatcherOnUpdateInDEV;
-        }
         try {
           const currentState: S = (queue.lastRenderedState: any);
           const eagerState = lastRenderedReducer(currentState, action);
@@ -1840,29 +1825,10 @@ function dispatchAction<S, A>(
         } catch (error) {
           // Suppress the error. It will throw again in the render phase.
         } finally {
-          if (__DEV__) {
-            ReactCurrentDispatcher.current = prevDispatcher;
-          }
         }
       }
     }
-    if (__DEV__) {
-      // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
-      if ('undefined' !== typeof jest) {
-        warnIfNotScopedWithMatchingAct(fiber);
-        warnIfNotCurrentlyActingUpdatesInDev(fiber);
-      }
-    }
     scheduleUpdateOnFiber(fiber, lane, eventTime);
-  }
-
-  if (__DEV__) {
-    if (enableDebugTracing) {
-      if (fiber.mode & DebugTracingMode) {
-        const name = getComponentName(fiber.type) || 'Unknown';
-        logStateUpdateScheduled(name, lane, action);
-      }
-    }
   }
 
   if (enableSchedulingProfiler) {

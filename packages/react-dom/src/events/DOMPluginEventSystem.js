@@ -83,7 +83,7 @@ type DispatchEntry = {|
 |};
 
 export type DispatchQueue = Array<DispatchEntry>;
-debugger
+
 // TODO: remove top-level side effect.
 SimpleEventPlugin.registerEvents();
 EnterLeaveEventPlugin.registerEvents();

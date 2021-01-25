@@ -1,18 +1,21 @@
-import logo from './logo.svg';
 import './App.css';
+import {useState} from 'react'
 
 function App() {
+  debugger
+  const [a,setA] = useState(['A','B','C','D']);
   return (
     <div onClick={()=>{
       console.log('444');
     }}>
       <div onClick={(e)=>{
-        console.log(e.persist);
-        debugger;
-        console.log('999');
+        setA(['B','A','D','C'])
       }} className="App">
-        onclick
+       click me
       </div>
+      {
+        a.map((i)=><span key={i} >{i+'oo'}</span>)
+      }
     </div>
   );
 }

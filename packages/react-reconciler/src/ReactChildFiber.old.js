@@ -404,7 +404,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       return existing;
     }
   }
-
+  // updateElement(returnFiber, matchedFiber, newChild, lanes);
   function updateElement(
     returnFiber: Fiber,
     current: Fiber | null,
@@ -632,15 +632,9 @@ function ChildReconciler(shouldTrackSideEffects) {
       throwOnInvalidObjectType(returnFiber, newChild);
     }
 
-    if (__DEV__) {
-      if (typeof newChild === 'function') {
-        warnOnFunctionType(returnFiber);
-      }
-    }
-
     return null;
   }
-
+//updateFromMap
   function updateFromMap(
     existingChildren: Map<string | number, Fiber>,
     returnFiber: Fiber,
@@ -781,14 +775,6 @@ function ChildReconciler(shouldTrackSideEffects) {
     // If you change this code, also update reconcileChildrenIterator() which
     // uses the same algorithm.
 
-    if (__DEV__) {
-      // First, validate keys.
-      let knownKeys = null;
-      for (let i = 0; i < newChildren.length; i++) {
-        const child = newChildren[i];
-        knownKeys = warnOnInvalidKey(child, knownKeys, returnFiber);
-      }
-    }
 
     let resultingFirstChild: Fiber | null = null;
     let previousNewFiber: Fiber | null = null;
@@ -873,6 +859,7 @@ function ChildReconciler(shouldTrackSideEffects) {
 
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
+      //updateFromMap 根据已有的节点创建新的节点
       const newFiber = updateFromMap(
         existingChildren,
         returnFiber,
