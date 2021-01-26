@@ -750,6 +750,41 @@ function ChildReconciler(shouldTrackSideEffects) {
     return knownKeys;
   }
 
+/**
+  const currentFirstChild = {
+    key: 'A',
+    index: 0,
+    sibling: {
+      key: 'B',
+      index: 1,
+      sibling: {
+        key: 'C',
+        index: 2,
+        sibling: {
+          key: 'D',
+          index: 3,
+          sibling: null
+        }
+      }
+    }
+  }
+**/
+/**
+  const newChildren = [
+    {
+      key: 'B',
+    },
+    {
+      key: 'A',
+    },
+    {
+      key: 'D',
+    },
+    {
+      key: 'C',
+    }
+  ]
+**/
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -783,37 +818,49 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+
+    // 这50行代码目前你可以就理解为找到第一个不能重复利用的节点
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
+      // 思考这个条件什么时候成立？
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
         oldFiber = null;
       } else {
         nextOldFiber = oldFiber.sibling;
       }
+      // 按照顺讯对比节点key值是否相同
+      // Update the fiber if the keys match, otherwise return null.
       const newFiber = updateSlot(
         returnFiber,
         oldFiber,
         newChildren[newIdx],
         lanes,
       );
+      //如果遇到不同节点那么会停本次比较
       if (newFiber === null) {
         // TODO: This breaks on empty slots like null children. That's
         // unfortunate because it triggers the slow path all the time. We need
         // a better way to communicate whether this was a miss or null,
         // boolean, undefined, etc.
         if (oldFiber === null) {
+          // 如果当oldFiber是最后一个null节点，那么我们让oldFiber指向最后一个节点
+          // 至于为什么这么做？往下看
           oldFiber = nextOldFiber;
         }
         break;
       }
+      // 这个变量的含义是啥？ 目前我这里是true
       if (shouldTrackSideEffects) {
+        //
         if (oldFiber && newFiber.alternate === null) {
           // We matched the slot, but we didn't reuse the existing fiber, so we
           // need to delete the existing child.
+          // 老节点存在，新节点alternate为空就要删除老节点么？翻翻这个updateSlot方法
           deleteChild(returnFiber, oldFiber);
         }
       }
       lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+      // 判断是否是第一个节点，然后继续往后遍历
       if (previousNewFiber === null) {
         // TODO: Move out of the loop. This only happens for the first run.
         resultingFirstChild = newFiber;
@@ -828,12 +875,14 @@ function ChildReconciler(shouldTrackSideEffects) {
       oldFiber = nextOldFiber;
     }
 
+    // 这里是想确认新数组没有遍历完，如果新的数组遍历完了，那么就会删除老节点
     if (newIdx === newChildren.length) {
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       return resultingFirstChild;
     }
 
+    // 这里是判断老节点是不是遍历完了，如果是那么执行添加操作
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
@@ -855,11 +904,12 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
 
     // Add all children to a key map for quick lookups.
+    // 线根据剩下的fiber节点的key生成一个map
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
 
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
-      //updateFromMap 根据已有的节点创建新的节点
+      //updateFromMap 根据已有的、Map中的节点创建新的节点
       const newFiber = updateFromMap(
         existingChildren,
         returnFiber,
@@ -867,6 +917,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         newChildren[newIdx],
         lanes,
       );
+      // 判断是否找到
       if (newFiber !== null) {
         if (shouldTrackSideEffects) {
           if (newFiber.alternate !== null) {
