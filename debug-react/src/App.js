@@ -2,7 +2,6 @@ import './App.css';
 import {useState} from 'react'
 
 function App() {
-  debugger
   const [a,setA] = useState(['A','B','C','D']);
   return (
     <div onClick={()=>{

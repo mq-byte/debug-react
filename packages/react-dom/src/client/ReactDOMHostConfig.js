@@ -266,7 +266,6 @@ export function createInstance(
   internalInstanceHandle: Object,
 ): Instance {
   let parentNamespace: string;
-  debugger;
   const domElement: Instance = createElement(
     type,
     props,

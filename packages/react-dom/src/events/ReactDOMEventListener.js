@@ -141,9 +141,6 @@ function dispatchDiscreteEvent(
   container,
   nativeEvent,
 ) {
-  if( domEventName === 'click' ){
-    debugger
-  }
   if (
     !enableLegacyFBSupport ||
     // If we are in Legacy FB support mode, it means we've already

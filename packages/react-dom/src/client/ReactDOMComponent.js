@@ -276,7 +276,6 @@ function setInitialDOMProperties(
 ): void {
   console.log(registrationNameDependencies, 'registrationNameDependencies------------');
   for (const propKey in nextProps) {
-    debugger;
     if (!nextProps.hasOwnProperty(propKey)) {
       continue;
     }

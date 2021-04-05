@@ -255,7 +255,6 @@ export function reconcileChildren(
   nextChildren: any,
   renderLanes: Lanes,
 ) {
-  debugger;
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,

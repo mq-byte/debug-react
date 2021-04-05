@@ -690,9 +690,6 @@ export function accumulateSinglePhaseListeners(
       }
 
       // Standard React on* listeners, i.e. onClick or onClickCapture
-      if (reactEventName === 'onClick'){
-        debugger;
-      }
       if (reactEventName !== null) {
         const listener = getListener(instance, reactEventName);
         if (listener != null) {
